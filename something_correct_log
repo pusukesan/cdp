@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+import telnetlib
+import sys
+import datetime
+
+d = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+hostname = sys.argv[1]
+command_file = sys.argv[2]
+
+LOGIN_USER = 'cisco'
+LOGIN_PASS = 'cisco'
+ENABLE_PASS = 'cisco'
+
+tn = telnetlib.Telnet(hostname)
+tn.set_debuglevel(0)
+
+#login
+tn.read_until('Username:')
+tn.write(LOGIN_USER + '\n')
+tn.read_until('Password:')
+tn.write(LOGIN_PASS + '\n')
+
+#enable
+tn.write('en' + '\n')
+tn.read_until('Password:')
+tn.write(ENABLE_PASS + '\n')
+tn.read_until('#')
+
+#show_commands
+tn.write('terminal length 0' + '\n')
+tn.read_until('#')
+
+with open(command_file) as f:
+    for line in f.readlines():
+        line = line.strip()
+        tn.write(line + '\n')
+        res = tn.read_until('#', 5)
+        with open(HOST + line + "_" + d, mode='w') as log:
+            for line in res:
+                log.write(line + '\r\n')
+                print line
+tn.close()
